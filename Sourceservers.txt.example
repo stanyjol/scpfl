@@ -1,5 +1,13 @@
-# Format: server_name:username@hostname:/path/to/source/file
-# Example entries:
-server1:user@192.168.1.10:/var/log/application.log
-server2:admin@example.com:/home/admin/config.txt
-server3:root@10.0.0.5:/etc/nginx/nginx.conf
+# Supported formats:
+# 1. Full format: user@hostname:/path/to/source/file
+# 2. Short format: @hostname:/path/to/source/file (requires --user option)
+
+# Example entries with full format:
+user@192.168.1.10:/var/log/application.log
+admin@example.com:/home/admin/config.txt
+root@10.0.0.5:/etc/nginx/nginx.conf
+
+# Example entries with short format (use with --user option):
+@web1.example.com:/var/log/nginx/access.log
+@web2.example.com:/var/log/nginx/error.log
+@db.example.com:/var/lib/mysql/mysql.log

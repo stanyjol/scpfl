@@ -44,39 +44,50 @@ chmod +x scpfl.sh
 # Copy files to specific directory
 ./scpfl.sh /path/to/destination
 
+# Use default user for short format entries
+./scpfl.sh --user admin
+
+# Combine default user with custom destination
+./scpfl.sh --user admin /path/to/destination
+
 # Show help
 ./scpfl.sh --help
 ```
 
 ## Configuration File Format
 
-The `~/Sourceservers.txt` file should contain one entry per line with the format:
+The `~/Sourceservers.txt` file supports two formats:
 
+### Format 1: Full Format
 ```
-server_name:username@hostname:/path/to/source/file
+user@hostname:/path/to/source/file
 ```
 
-Where:
-- `server_name`: A unique identifier for the server (used as file suffix)
-- `username@hostname`: SSH connection details
-- `/path/to/source/file`: Full path to the file on the remote server
+### Format 2: Short Format (requires --user option)
+```
+@hostname:/path/to/source/file
+```
 
 ### Example Configuration
 
 ```
-webserver1:deploy@web1.example.com:/var/log/nginx/access.log
-database:admin@db.example.com:/var/lib/mysql/mysql.log
-backup:root@backup.local:/home/backup/daily.tar.gz
+# Full format entries
+deploy@web1.example.com:/var/log/nginx/access.log
+admin@db.example.com:/var/lib/mysql/mysql.log
+
+# Short format entries (use with --user option)
+@web2.example.com:/var/log/nginx/error.log
+@backup.local:/home/backup/daily.tar.gz
 ```
 
 ## Output
 
 Files are copied with the following naming convention:
 ```
-original_filename-server_name
+original_filename-hostname
 ```
 
-For example, if copying `config.txt` from `server1`, the local file will be named `config.txt-server1`.
+For example, if copying `config.txt` from `web1.example.com`, the local file will be named `config.txt-web1.example.com`.
 
 ## Features
 
