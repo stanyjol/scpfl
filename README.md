@@ -18,22 +18,35 @@ A bash script that copies files from multiple servers to a local directory using
 - SSH access to target servers
 - `~/Sourceservers.txt` configuration file
 
+## Requirements
+
+- `scp` command (usually pre-installed on most Linux/Unix systems)
+- `sshpass` (optional, for password automation when using `--user` option)
+
+### Installing sshpass
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install sshpass
+
+# CentOS/RHEL/Fedora
+sudo yum install sshpass
+# or
+sudo dnf install sshpass
+
+# macOS (with Homebrew)
+brew install hudochenkov/sshpass/sshpass
+```
+
 ## Setup
 
-1. Create the server configuration file `~/Sourceservers.txt` with the following format:
-
-```
-# Format: server_name:username@hostname:/path/to/source/file
-server1:user@192.168.1.10:/var/log/application.log
-server2:admin@example.com:/home/admin/config.txt
-server3:root@10.0.0.5:/etc/nginx/nginx.conf
-```
-
-2. Make the script executable:
+1. Make the script executable:
 
 ```bash
 chmod +x scpfl.sh
 ```
+
+2. Create the server configuration file `~/Sourceservers.txt` (see Configuration File Format section below)
 
 ## Usage
 
@@ -91,7 +104,8 @@ For example, if copying `config.txt` from `web1.example.com`, the local file wil
 
 ## Features
 
-- **Interactive Authentication**: The script will prompt for passwords when needed
+- **Password Automation**: When using `--user` option, prompts once for password and reuses it for all matching servers (requires `sshpass`)
+- **Interactive Authentication**: Falls back to individual password prompts when needed
 - **Progress Tracking**: Shows which server is being processed
 - **Error Handling**: Continues processing other servers if one fails
 - **Summary Report**: Shows total processed, successful, and failed copies

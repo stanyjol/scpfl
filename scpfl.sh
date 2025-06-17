@@ -25,6 +25,8 @@ usage() {
     echo ""
     echo "Options:"
     echo "  --user USERNAME    Default username for entries in short format (@hostname:path)"
+    echo "                     When specified, you'll be prompted once for the password"
+    echo "                     and it will be reused for all servers using this username"
     echo "  -h, --help         Show this help message"
     echo ""
     echo "Examples:"
@@ -38,6 +40,11 @@ usage() {
     echo ""
     echo "Arguments:"
     echo "  destination_directory  Local directory to store copied files (default: ./downloaded_files)"
+    echo ""
+    echo "Requirements:"
+    echo "  - sshpass (for password automation when using --user option)"
+    echo "    Install with: sudo apt-get install sshpass (Ubuntu/Debian)"
+    echo "                  sudo yum install sshpass (CentOS/RHEL)"
     exit 1
 }
 
@@ -61,6 +68,7 @@ validate_servers_file() {
 copy_from_server() {
     local scp_source="$1"
     local dest_dir="$2"
+    local password="$3"
     
     # Extract hostname from scp_source for server name
     local hostname=$(echo "$scp_source" | sed 's/.*@\([^:]*\):.*/\1/')
@@ -73,8 +81,17 @@ copy_from_server() {
     
     echo "Copying from $hostname: $scp_source -> $dest_path"
     
-    # Use scp with options for better user experience
-    if scp -o ConnectTimeout=30 -o BatchMode=no "$scp_source" "$dest_path"; then
+    # Use scp with or without sshpass depending on whether password is provided
+    local scp_cmd
+    if [[ -n "$password" ]]; then
+        # Use sshpass with the provided password
+        scp_cmd="sshpass -p '$password' scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no"
+    else
+        # Use regular scp with interactive password prompt
+        scp_cmd="scp -o ConnectTimeout=30 -o BatchMode=no"
+    fi
+    
+    if eval "$scp_cmd \"$scp_source\" \"$dest_path\""; then
         echo "✓ Successfully copied from $hostname"
         echo "  File saved as: $dest_path"
     else
@@ -119,6 +136,25 @@ main() {
         echo "Default user: $default_user"
     fi
     echo ""
+    
+    # Prompt for password if default user is specified
+    local user_password=""
+    if [[ -n "$default_user" ]]; then
+        echo "Password will be requested for user '$default_user' and reused for all servers."
+        echo -n "Enter password for $default_user: "
+        read -s user_password
+        echo ""
+        echo ""
+        
+        # Check if sshpass is available
+        if ! command -v sshpass &> /dev/null; then
+            echo "Warning: sshpass is not installed. Password automation will not work."
+            echo "Install sshpass with: sudo apt-get install sshpass (Ubuntu/Debian) or sudo yum install sshpass (CentOS/RHEL)"
+            echo "Continuing with interactive password prompts..."
+            user_password=""
+            echo ""
+        fi
+    fi
     
     # Validate servers file
     validate_servers_file
@@ -171,7 +207,17 @@ main() {
         local hostname=$(echo "$scp_source" | sed 's/.*@\([^:]*\):.*/\1/')
         echo "Processing server: $hostname"
         
-        if copy_from_server "$scp_source" "$dest_dir"; then
+        # Determine which password to use
+        local current_password=""
+        if [[ -n "$default_user" ]]; then
+            # Check if this entry uses the default user
+            local entry_user=$(echo "$scp_source" | sed 's/\([^@]*\)@.*/\1/')
+            if [[ "$entry_user" == "$default_user" ]]; then
+                current_password="$user_password"
+            fi
+        fi
+        
+        if copy_from_server "$scp_source" "$dest_dir" "$current_password"; then
             ((success_count++))
         fi
     done < "$SERVERS_FILE"
